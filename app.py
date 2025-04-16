@@ -75,7 +75,7 @@ if uploaded_file is not None:
 
     # Display predictions
     st.markdown("### 🔎 Prediction Results")
-    st.markdown(f"**CNN : Custom Convolutional Neural Network** — Class: `{class_1.upper()}` | Confidence: `{confidence_1:.2f}%`")
-    st.markdown(f"**MobileNetV2: Pre-trained lightweight model** — Class: `{class_2.upper()}` | Confidence: `{confidence_2:.2f}%`")
+    st.markdown(f"**MobileNetV2: Pre-trained lightweight model** — Class: `{class_1.upper()}` | Confidence: `{confidence_1:.2f}%`")
+    st.markdown(f"**CNN : Custom Convolutional Neural Network** — Class: `{class_2.upper()}` | Confidence: `{confidence_2:.2f}%`")
 else:
     st.info("👆 Upload an image to get predictions.")
