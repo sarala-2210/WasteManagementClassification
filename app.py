@@ -3,47 +3,79 @@ import numpy as np
 from PIL import Image
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, img_to_array
+import gdown
+import os
 
-# Load your best saved model
-model = load_model("best_model.keras")
+# Page setup
+st.set_page_config(
+    page_title="♻️ Waste Classification App",
+    page_icon="🧠",
+    layout="centered"
+)
 
-# Define target image size (should match your model input)
+# Paths and model download
+model1_path = "best_model.keras"
+model2_file_id = "19DFx7QKHTJgjss6qcNedZYqoHaf1pXqD"
+model2_path = "model2.keras"
+
+def download_model_from_drive(file_id, output_path):
+    url = f"https://drive.google.com/uc?id={file_id}"
+    if not os.path.exists(output_path):
+        gdown.download(url, output_path, quiet=False)
+
+# Download model2 from Google Drive if not already present
+download_model_from_drive(model2_file_id, model2_path)
+
+# Load models
+model1 = load_model(model1_path)
+model2 = load_model(model2_path)
+
+# Target image size expected by the models
 TARGET_SIZE = (224, 224)
 
-# Replace with actual class names in order of training labels
-# Dictionary to save our 12 classes
-categories = {0: 'paper', 1: 'cardboard', 2: 'plastic', 3: 'metal', 4: 'trash', 5: 'battery',
-              6: 'shoes', 7: 'clothes', 8: 'green-glass', 9: 'brown-glass', 10: 'white-glass',
-              11: 'biological'}
+# Class labels
+categories = {
+    0: 'paper', 1: 'cardboard', 2: 'plastic', 3: 'metal', 4: 'trash', 5: 'battery',
+    6: 'shoes', 7: 'clothes', 8: 'green-glass', 9: 'brown-glass', 10: 'white-glass',
+    11: 'biological'
+}
 
-# ImageDataGenerator for test-time preprocessing (same as val/test generator)
-val_test_datagen = ImageDataGenerator(rescale=1./255)
+# Image preprocessing
+val_test_datagen = ImageDataGenerator(rescale=1. / 255)
 
-# Preprocess a single image using same settings as test_generator
 def preprocess_single_image(img):
     img = img.resize(TARGET_SIZE)
     img_array = img_to_array(img)
-    img_array = img_array.reshape((1,) + img_array.shape)  # Add batch dimension
-    img_array = val_test_datagen.standardize(img_array)    # Apply rescaling
+    img_array = img_array.reshape((1,) + img_array.shape)
+    img_array = val_test_datagen.standardize(img_array)
     return img_array
 
 # Streamlit UI
-st.title("🧠 Deep Learning Image Classifier")
-st.write("Upload an image and I'll tell you what it is!")
+st.title("🧠 Waste Classification using CNN")
+st.write("Upload a waste image to see predictions from both models.")
 
-uploaded_file = st.file_uploader("Choose an image file", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("📤 Upload an image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Load and display image
     img = Image.open(uploaded_file)
-    st.image(img, caption="Uploaded Image", use_container_width=True)
+    st.image(img, caption="Uploaded Image", use_column_width=True)
 
-    # Preprocess and predict
     input_image = preprocess_single_image(img)
-    prediction = model.predict(input_image)
 
-    predicted_class = categories[np.argmax(prediction[0])]
-    confidence = np.max(prediction[0]) * 100
+    # Predictions from both models
+    prediction_1 = model1.predict(input_image)
+    prediction_2 = model2.predict(input_image)
 
-    st.markdown(f"### 🏷️ Prediction: **{predicted_class}**")
-    st.markdown(f"**Confidence:** {confidence:.2f}%")
+    # Extract predicted classes and confidence
+    class_1 = categories[np.argmax(prediction_1[0])]
+    confidence_1 = np.max(prediction_1[0]) * 100
+
+    class_2 = categories[np.argmax(prediction_2[0])]
+    confidence_2 = np.max(prediction_2[0]) * 100
+
+    # Display predictions
+    st.markdown("### 🔎 Prediction Results")
+    st.markdown(f"**Model 1** — Class: `{class_1.upper()}` | Confidence: `{confidence_1:.2f}%`")
+    st.markdown(f"**Model 2** — Class: `{class_2.upper()}` | Confidence: `{confidence_2:.2f}%`")
+else:
+    st.info("👆 Upload an image to get predictions.")
